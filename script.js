@@ -234,17 +234,30 @@ class GeometrixApp {
         this.controls.minDistance = 2;
         this.controls.maxDistance = 20;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lighting setup with enhanced shading
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         this.scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(10, 10, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
         this.scene.add(directionalLight);
 
-        const pointLight = new THREE.PointLight(0x4f46e5, 0.5);
+        const pointLight = new THREE.PointLight(0x4f46e5, 0.6);
         pointLight.position.set(-10, -10, -5);
         this.scene.add(pointLight);
+
+        const rimLight = new THREE.DirectionalLight(0x4f46e5, 0.3);
+        rimLight.position.set(-5, 5, -5);
+        this.scene.add(rimLight);
+
+        // Enable shadows in renderer
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
 
         this.setViewMode(false);
     }
@@ -294,9 +307,34 @@ class GeometrixApp {
         const geometry = this.createPrismGeometry(sides, 2.5, 1.5);
         const color = document.getElementById('shapeColor').value;
         const wireframe = document.getElementById('wireframe').checked;
-        const material = new THREE.MeshPhongMaterial({ color, wireframe, shininess: 100, specular: 0x222222 });
+        
+        // Enhanced material with better shading
+        const material = new THREE.MeshPhysicalMaterial({
+            color: color,
+            wireframe: wireframe,
+            metalness: 0.1,
+            roughness: 0.3,
+            clearcoat: 0.3,
+            clearcoatRoughness: 0.2,
+            reflectivity: 0.5,
+            envMapIntensity: 0.8
+        });
+        
         this.currentMesh = new THREE.Mesh(geometry, material);
+        this.currentMesh.castShadow = true;
+        this.currentMesh.receiveShadow = true;
         this.scene.add(this.currentMesh);
+
+        // Add edges if not in wireframe mode
+        if (!wireframe) {
+            const edges = new THREE.EdgesGeometry(geometry);
+            // Create opposite color of selected color
+            const colorObj = new THREE.Color(color);
+            const oppositeColor = new THREE.Color(1 - colorObj.r, 1 - colorObj.g, 1 - colorObj.b);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: oppositeColor, linewidth: 2 });
+            const wireframe = new THREE.LineSegments(edges, lineMaterial);
+            this.currentMesh.add(wireframe);
+        }
 
         this.updateInfoPanel(sides.toString());
         this.updateActiveButton(sides.toString());
@@ -389,6 +427,57 @@ class GeometrixApp {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        let touchStartDistance = 0;
+        let touchStartRotation = { x: 0, y: 0 };
+
+        this.renderer.domElement.addEventListener('touchstart', (e) => {
+            if (!this.is2DMode) {
+                if (e.touches.length === 2) {
+                    // Pinch to zoom
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+                } else if (e.touches.length === 1) {
+                    // Single touch for rotation
+                    touchStartRotation.x = e.touches[0].clientX;
+                    touchStartRotation.y = e.touches[0].clientY;
+                }
+                e.preventDefault();
+            }
+        });
+
+        this.renderer.domElement.addEventListener('touchmove', (e) => {
+            if (!this.is2DMode) {
+                if (e.touches.length === 2) {
+                    // Pinch to zoom
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (touchStartDistance > 0) {
+                        const scale = distance / touchStartDistance;
+                        this.cameraRadius *= scale;
+                        this.cameraRadius = Math.max(2, Math.min(20, this.cameraRadius));
+                        this.updateCameraPosition();
+                        touchStartDistance = distance;
+                    }
+                } else if (e.touches.length === 1) {
+                    // Single touch for rotation
+                    const deltaX = e.touches[0].clientX - touchStartRotation.x;
+                    const deltaY = e.touches[0].clientY - touchStartRotation.y;
+                    
+                    this.cameraTheta += deltaX * 0.01;
+                    this.cameraPhi += deltaY * 0.01;
+                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi));
+                    
+                    touchStartRotation.x = e.touches[0].clientX;
+                    touchStartRotation.y = e.touches[0].clientY;
+                    this.updateCameraPosition();
+                }
+                e.preventDefault();
+            }
+        });
+
         document.getElementById('language-switcher').addEventListener('change', (e) => this.setLanguage(e.target.value));
         document.getElementById('view3d').addEventListener('click', () => this.setViewMode(false));
         document.getElementById('view2d').addEventListener('click', () => this.setViewMode(true));
@@ -411,7 +500,26 @@ class GeometrixApp {
 
         document.getElementById('wireframe').addEventListener('change', () => this.redrawCurrentShape());
         document.getElementById('shapeColor').addEventListener('change', () => {
-            if (this.currentMesh) this.currentMesh.material.color.set(document.getElementById('shapeColor').value);
+            if (this.currentMesh) {
+                this.currentMesh.material.color.set(document.getElementById('shapeColor').value);
+                
+                // Update edge color if not in wireframe mode
+                if (!this.is2DMode && !document.getElementById('wireframe').checked) {
+                    // Remove old wireframe
+                    const oldWireframe = this.currentMesh.children.find(child => child instanceof THREE.LineSegments);
+                    if (oldWireframe) {
+                        this.currentMesh.remove(oldWireframe);
+                    }
+                    
+                    // Add new wireframe with opposite color
+                    const edges = new THREE.EdgesGeometry(this.currentMesh.geometry);
+                    const colorObj = new THREE.Color(document.getElementById('shapeColor').value);
+                    const oppositeColor = new THREE.Color(1 - colorObj.r, 1 - colorObj.g, 1 - colorObj.b);
+                    const lineMaterial = new THREE.LineBasicMaterial({ color: oppositeColor, linewidth: 2 });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    this.currentMesh.add(wireframe);
+                }
+            }
         });
 
 
