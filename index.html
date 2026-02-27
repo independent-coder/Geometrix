@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometrix - 3D Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div id="canvas-container"></div>
+    
+    <div class="ui-overlay">
+        <!-- Header -->
+        <header class="glass-effect text-white p-4 m-4 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent" data-i18n="title">
+                        Geometrix
+                    </h1>
+                    <p class="text-sm text-gray-300 mt-1" data-i18n="subtitle">Interactive 3D Viewer</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <select id="language-switcher" class="bg-indigo-600 border border-transparent rounded-md py-2 pl-3 pr-10 text-base text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Left Panel -->
+        <div class="glass-effect text-white p-4 m-4 rounded-xl max-w-sm">
+            <!-- View Mode Tabs -->
+            <div class="flex border-b border-gray-500 mb-4">
+                <button id="view3d" class="tab-btn active w-1/2 py-2" data-i18n="view3d">3D</button>
+                <button id="view2d" class="tab-btn w-1/2 py-2" data-i18n="view2d">2D</button>
+            </div>
+
+            <!-- Shape Selection -->
+            <div id="shape-selection-panel">
+                <h3 class="text-sm font-medium mb-2 text-gray-300" data-i18n="shape_selection">Shape Selection</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="shape-btn" data-sides="3" data-i18n="triangle">Triangle</button>
+                    <button class="shape-btn" data-sides="4" data-i18n="square">Square</button>
+                    <button class="shape-btn" data-sides="5" data-i18n="pentagon">Pentagon</button>
+                    <button class="shape-btn" data-sides="6" data-i18n="hexagon">Hexagon</button>
+                    <button class="shape-btn" data-sides="7" data-i18n="heptagon">Heptagon</button>
+                    <button class="shape-btn" data-sides="8" data-i18n="octagon">Octagon</button>
+                    <button class="shape-btn" data-sides="9" data-i18n="enneagon">Enneagon</button>
+                    <button class="shape-btn" data-sides="10" data-i18n="decagon">Decagon</button>
+                    <button class="shape-btn" data-sides="11" data-i18n="hendecagon">Hendecagon</button>
+                    <button class="shape-btn" data-sides="12" data-i18n="dodecagon">Dodecagon</button>
+                </div>
+            </div>
+            
+            <!-- General Controls -->
+            <div class="mt-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-i18n="rotation_speed">Rotation Speed</label>
+                    <input type="range" id="rotationSpeed" min="0" max="100" value="50" class="w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-i18n="wireframe">Wireframe</label>
+                    <input type="checkbox" id="wireframe" class="mr-2">
+                    <span class="text-sm" data-i18n="show_edges_only">Show edges only</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-i18n="color">Color</label>
+                    <input type="color" id="shapeColor" value="#4f46e5" class="w-full h-10 rounded cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel (Info) -->
+        <div id="info-panel" class="glass-effect text-white p-4 m-4 rounded-xl max-w-sm absolute top-1/3 right-4 hidden">
+            <h3 class="text-lg font-semibold mb-2" id="info-title" data-i18n="shape_information">Shape Information</h3>
+            <div id="info-content" class="text-sm space-y-2 text-gray-300">
+                <!-- Info will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Bottom Right Panel (Controls Help) -->
+        <div class="glass-effect text-white p-4 m-4 rounded-xl max-w-sm absolute bottom-4 right-4">
+            <h3 class="text-lg font-semibold mb-2" data-i18n="controls">Controls</h3>
+            <ul class="text-sm space-y-1 text-gray-300">
+                <li data-i18n="control_rotate">• Left click + drag: Rotate</li>
+                <li data-i18n="control_pan">• Right click + drag: Pan</li>
+                <li data-i18n="control_zoom">• Scroll: Zoom in/out</li>
+                <li data-i18n="control_reset">• Double click: Reset view</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

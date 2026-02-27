@@ -1,0 +1,64 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.ui-overlay {
+    position: relative;
+    z-index: 10;
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn {
+    transition: background-color 0.3s, color 0.3s;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.tab-btn.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: 600;
+}
+
+.shape-btn {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background-color: rgba(79, 70, 229, 0.5);
+    color: white;
+    transition: background-color 0.3s;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.shape-btn:hover {
+    background-color: rgba(79, 70, 229, 0.8);
+}
+
+.shape-btn.active {
+    background-color: #4f46e5;
+    font-weight: bold;
+}
+
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
